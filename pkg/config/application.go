@@ -169,3 +169,9 @@ func anchorPeersValue(anchorPeers []*pb.AnchorPeer) *standardConfigValue {
 		value: &pb.AnchorPeers{AnchorPeers: anchorPeers},
 	}
 }
+
+// getOrgsFromApplication which takes in a config proto and returns a map of
+// orgs in ChannelGroup Application.
+func getOrgsFromApplication(config *cb.Config) map[string]*cb.ConfigGroup {
+	return config.ChannelGroup.Groups[ApplicationGroupKey].Groups
+}
