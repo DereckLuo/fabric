@@ -220,9 +220,11 @@ func InstallChaincodeLegacy(n *Network, chaincode Chaincode, peers ...*Peer) {
 }
 
 func ApproveChaincodeForMyOrg(n *Network, channel string, orderer *Orderer, chaincode Chaincode, peers ...*Peer) {
-	if chaincode.PackageID == "" {
-		chaincode.SetPackageIDFromPackageFile()
-	}
+	// TODO only set package id when devmode is not enabled
+	// TODO move to the peer loop below?
+	// if chaincode.PackageID == "" {
+	// 	chaincode.SetPackageIDFromPackageFile()
+	// }
 
 	// used to ensure we only approve once per org
 	approvedOrgs := map[string]bool{}

@@ -7,8 +7,11 @@ SPDX-License-Identifier: Apache-2.0
 package lifecycle
 
 import (
+	"fmt"
+
 	"github.com/hyperledger/fabric/core/ledger"
 	"github.com/hyperledger/fabric/core/scc"
+	"github.com/spf13/viper"
 
 	"github.com/pkg/errors"
 )
@@ -90,6 +93,13 @@ func (cei *ChaincodeEndorsementInfoSource) CachedChaincodeInfo(channelID, chainc
 	}
 
 	if chaincodeInfo.InstallInfo == nil {
+		// TODO fix this devmode check
+		if viper.GetString("chaincode.mode") == "dev" {
+			chaincodeInfo.InstallInfo = &ChaincodeInstallInfo{
+				PackageID: fmt.Sprintf("%s:%s", chaincodeName, chaincodeInfo.Definition.EndorsementInfo.Version),
+			}
+			return chaincodeInfo, true, nil
+		}
 		return nil, false, errors.Errorf("chaincode definition for '%s' exists, but chaincode is not installed", chaincodeName)
 	}
 
@@ -128,6 +138,10 @@ func (cei *ChaincodeEndorsementInfoSource) ChaincodeEndorsementInfo(channelID, c
 	}
 	if !ok {
 		return cei.LegacyImpl.ChaincodeEndorsementInfo(channelID, chaincodeName, qe)
+	}
+
+	if chaincodeInfo.InstallInfo == nil {
+		chaincodeInfo.InstallInfo = &ChaincodeInstallInfo{}
 	}
 
 	return &ChaincodeEndorsementInfo{

@@ -6,6 +6,61 @@ SPDX-License-Identifier: Apache-2.0
 
 package nwo
 
+func SimpleSolo() *Config {
+	return &Config{
+		Organizations: []*Organization{{
+			Name:          "OrdererOrg",
+			MSPID:         "OrdererMSP",
+			Domain:        "example.com",
+			EnableNodeOUs: false,
+			Users:         0,
+			CA:            &CA{Hostname: "ca"},
+		}, {
+			Name:          "Org1",
+			MSPID:         "Org1MSP",
+			Domain:        "org1.example.com",
+			EnableNodeOUs: true,
+			Users:         2,
+			CA:            &CA{Hostname: "ca"},
+		}},
+		Consortiums: []*Consortium{{
+			Name: "SampleConsortium",
+			Organizations: []string{
+				"Org1",
+			},
+		}},
+		Consensus: &Consensus{
+			Type:            "solo",
+			BootstrapMethod: "file",
+		},
+		SystemChannel: &SystemChannel{
+			Name:    "systemchannel",
+			Profile: "TwoOrgsOrdererGenesis",
+		},
+		Orderers: []*Orderer{
+			{Name: "orderer", Organization: "OrdererOrg"},
+		},
+		Channels: []*Channel{
+			{Name: "testchannel", Profile: "TwoOrgsChannel"},
+		},
+		Peers: []*Peer{{
+			Name:         "peer0",
+			Organization: "Org1",
+			Channels: []*PeerChannel{
+				{Name: "testchannel", Anchor: true},
+			},
+		}},
+		Profiles: []*Profile{{
+			Name:     "TwoOrgsOrdererGenesis",
+			Orderers: []string{"orderer"},
+		}, {
+			Name:          "TwoOrgsChannel",
+			Consortium:    "SampleConsortium",
+			Organizations: []string{"Org1"},
+		}},
+	}
+}
+
 // BasicSolo is a configuration with two organizations and one peer per org.
 func BasicSolo() *Config {
 	return &Config{

@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package chaincode
 
 import (
+	"fmt"
 	"strconv"
 	"time"
 
@@ -73,6 +74,7 @@ func (r *RuntimeLauncher) Launch(ccid string, streamHandler extcc.StreamHandler)
 
 	startTime := time.Now()
 	launchState, alreadyStarted := r.Registry.Launching(ccid)
+	fmt.Printf("!! DL ---- runtime launcher , Launch : alreadyStarted : %+v\n", alreadyStarted)
 	if !alreadyStarted {
 		startFailCh = make(chan error, 1)
 		timeoutCh = time.NewTimer(r.StartupTimeout).C

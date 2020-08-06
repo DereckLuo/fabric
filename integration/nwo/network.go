@@ -102,6 +102,7 @@ func (o Orderer) ID() string {
 // channels that the peer should be joined to.
 type Peer struct {
 	Name         string         `yaml:"name,omitempty"`
+	DevMode      bool           `yaml:"devmode,omitempty"`
 	Organization string         `yaml:"organization,omitempty"`
 	Channels     []*PeerChannel `yaml:"channels,omitempty"`
 }
@@ -151,6 +152,7 @@ type Network struct {
 	MetricsProvider       string
 	StatsdEndpoint        string
 	ClientAuthRequired    bool
+	TLSEnabled            bool
 
 	PortsByBrokerID  map[string]Ports
 	PortsByOrdererID map[string]Ports
@@ -195,6 +197,7 @@ func New(c *Config, rootDir string, client *docker.Client, startPort int, compon
 		Profiles:      c.Profiles,
 		Consortiums:   c.Consortiums,
 		Templates:     c.Templates,
+		TLSEnabled:    true, // Set TLS enabled as true for default
 
 		sessLastExecuted: make(map[string]time.Time),
 	}
@@ -1258,11 +1261,12 @@ func (n *Network) OrdererGroupRunner() ifrit.Runner {
 // used to start and manage a peer process.
 func (n *Network) PeerRunner(p *Peer, env ...string) *ginkgomon.Runner {
 	cmd := n.peerCommand(
-		commands.NodeStart{PeerID: p.ID()},
+		commands.NodeStart{PeerID: p.ID(), DevMode: p.DevMode},
 		"",
 		fmt.Sprintf("FABRIC_CFG_PATH=%s", n.PeerDir(p)),
 		fmt.Sprintf("CORE_LEDGER_STATE_COUCHDBCONFIG_USERNAME=admin"),
 		fmt.Sprintf("CORE_LEDGER_STATE_COUCHDBCONFIG_PASSWORD=adminpw"),
+		"FABRIC_LOGGING_SPEC=debug:cauthdsl,policies,msp,grpc,peer.gossip.mcs,gossip,leveldbhelper=info",
 	)
 	cmd.Env = append(cmd.Env, env...)
 
@@ -1300,7 +1304,7 @@ func (n *Network) peerCommand(command Command, tlsDir string, env ...string) *ex
 	cmd := NewCommand(n.Components.Peer(), command)
 	cmd.Env = append(cmd.Env, env...)
 
-	if connectsToOrderer(command) {
+	if connectsToOrderer(command) && n.TLSEnabled {
 		cmd.Args = append(cmd.Args, "--tls")
 		cmd.Args = append(cmd.Args, "--cafile", n.CACertsBundlePath())
 	}
